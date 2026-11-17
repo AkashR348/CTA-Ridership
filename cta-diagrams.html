@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CTA Ridership Diagrams</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: one reading column of numbered figures, transit-signage headings, each diagram in its own scroll box */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --fg: #1b2330;
+  --muted: #5b6676;
+  --line: #d9dee6;
+  --accent: #00a1de;   /* CTA blue line */
+  --accent-2: #c60c30; /* CTA red line */
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161d; --surface: #182029; --fg: #e6ebf1; --muted: #9aa6b5; --line: #2a3540;
+    --accent: #3cbcf0; --accent-2: #f0566f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161d; --surface: #182029; --fg: #e6ebf1; --muted: #9aa6b5; --line: #2a3540;
+  --accent: #3cbcf0; --accent-2: #f0566f; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px; }
+header { display: flex; flex-direction: column; gap: 8px; border-bottom: 4px solid var(--accent); padding-bottom: 18px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-size: clamp(34px, 6vw, 52px); line-height: 1; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+header p { margin: 0; max-width: 65ch; color: var(--muted); }
+nav { display: flex; flex-wrap: wrap; gap: 8px; }
+nav a { font-size: 13px; color: var(--fg); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; background: var(--surface); }
+nav a:hover, nav a:focus-visible { border-color: var(--accent); outline: none; }
+section { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fig { display: flex; align-items: baseline; gap: 12px; }
+.num { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 4px; padding: 1px 8px; }
+section:nth-of-type(even) .num { background: var(--accent-2); }
+h2 { font-family: var(--font-display); font-size: 28px; margin: 0; line-height: 1.1; text-wrap: balance; }
+section > p { margin: 0; max-width: 65ch; color: var(--muted); }
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; overflow-x: auto; }
+.diagram pre.mermaid { margin: 0; background: transparent; font-family: var(--font-body); text-align: center; }
+header.part { border-bottom-color: var(--accent-2); margin-top: 16px; }
+header.part h1 { font-size: clamp(28px, 5vw, 40px); }
+.kind { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.dict { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 20px; overflow-x: auto; }
+.dict dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 13px; }
+.dict dt { font-weight: 600; }
+.dict dd { margin: 0; font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .dict dl { grid-template-columns: 1fr; } .dict dd { margin-bottom: 8px; } }
+.kind { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.dict { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 20px; overflow-x: auto; }
+.dict dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 13px; }
+.dict dt { font-weight: 600; }
+.dict dd { margin: 0; font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .dict dl { grid-template-columns: 1fr; } .dict dd { margin-bottom: 8px; } }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+code { font-family: var(--font-mono); font-size: 13px; }
+</style>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs";
+const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "default" });
+</script>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">CTA Ridership &amp; Weather · from PROJECT_PLAN.md</span>
+    <h1>CTA Ridership Diagrams</h1>
+    <p>Part 1 is the big picture: the roadmap, the AWS architecture, the S3 layout, the Terraform modules, and the open decisions. Part 2 is the UML and structured-analysis diagrams for each phase, drawn to the IT 432 rubrics: use case, activity, data flow, domain model class, design class, and sequence diagrams. They show structure only, with no implementation logic.</p>
+    <nav><a href="#roadmap">Phase roadmap</a><a href="#evolution">How the system grows</a><a href="#architecture">AWS architecture</a><a href="#lake">Data lake layout</a><a href="#terraform">Terraform module dependencies</a><a href="#decisions">Open decisions, by when you hit them</a></nav>
+  </header>
+  <section id="roadmap">
+    <div class="fig"><span class="num">1</span><h2>Phase roadmap</h2></div>
+    <span class="kind">Gantt chart (not UML)</span>
+    <p>Eight phases at about 10 hours a week. Bar lengths use the midpoint of each phase&#x27;s hour estimate, so dates are approximate. Phases 1–3 alone make a portfolio project.</p>
+    <div class="diagram"><pre class="mermaid">
+gantt
+    title CTA project at ~10 hrs/week (midpoint estimates)
+    dateFormat YYYY-MM-DD
+    axisFormat %b
+    section Local
+    1 Plain Python (10-15h)         :p1, 2026-11-23, 9d
+    2 pandas + EDA (15-25h)         :p2, after p1, 14d
+    3 SQL / PostgreSQL (10-20h)     :p3, after p2, 11d
+    Portfolio-ready milestone       :milestone, m1, after p3, 0d
+    section Cloud
+    4 S3 + IAM (8-15h)              :p4, after p3, 8d
+    5 Terraform (20-35h)            :p5, after p4, 19d
+    6 Lambda + Athena (25-40h)      :p6, after p5, 23d
+    Cloud pipeline milestone        :milestone, m2, after p6, 0d
+    section Ship
+    7 Model + Docker + ECS (30-45h) :p7, after p6, 26d
+    8 CI/CD with OIDC (10-20h)      :p8, after p7, 11d
+    README, diagram, cleanup (8-12h):p9, after p8, 7d
+    Resume version                  :milestone, m3, after p9, 0d
+    </pre></div>
+  </section>
+  <section id="evolution">
+    <div class="fig"><span class="num">2</span><h2>How the system grows</h2></div>
+    <span class="kind">Overview (not UML)</span>
+    <p>Each phase replaces one piece of the previous one. Functions written early, such as fetch_*, clean_*, and s3_io, are reused later instead of rewritten.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    subgraph L["Local (Phases 1-3)"]
+        direction TB
+        C1["CSV + csv module&lt;br/&gt;hand-written stats"] --&gt; C2["pandas&lt;br/&gt;+ Open-Meteo join"]
+        C2 --&gt; C3["SQLite then PostgreSQL&lt;br/&gt;4 saved queries"]
+    end
+    subgraph A["AWS (Phases 4-6)"]
+        direction TB
+        S["S3 data lake&lt;br/&gt;console first"] --&gt; T["Same bucket&lt;br/&gt;in Terraform"]
+        T --&gt; P["Daily Lambda&lt;br/&gt;Glue + Athena"]
+    end
+    subgraph D["Ship (Phases 7-8)"]
+        direction TB
+        M["scikit-learn model&lt;br/&gt;beats baseline MAE"] --&gt; UI["Streamlit in Docker&lt;br/&gt;ECS or App Runner"]
+        UI --&gt; CI["GitHub Actions&lt;br/&gt;OIDC deploys"]
+    end
+    C3 -- "same queries run in Athena" --&gt; P
+    C2 -- "files move to S3" --&gt; S
+    P --&gt; M
+    </pre></div>
+  </section>
+  <section id="architecture">
+    <div class="fig"><span class="num">3</span><h2>Overall · AWS architecture</h2></div>
+    <span class="kind">Architecture diagram (not UML)</span>
+    <p>The finished system on one page, and the diagram for your README. Everything inside the AWS box is created by Terraform and deployed from GitHub Actions without stored access keys.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    CTA["Chicago Data Portal&lt;br/&gt;ridership API"]
+    OM["Open-Meteo&lt;br/&gt;weather API"]
+    GH["GitHub Actions"]
+    U(["You / recruiter"])
+    subgraph AWS
+        EB["EventBridge&lt;br/&gt;daily schedule"] --&gt; L["Lambda ingest"]
+        PS["Parameter Store&lt;br/&gt;config"] -.-&gt; L
+        L --&gt; RAW[("S3 raw/&lt;br/&gt;JSON")]
+        RAW --&gt; CL["Clean + transform"]
+        CL --&gt; CLEAN[("S3 clean/&lt;br/&gt;Parquet")]
+        CLEAN --&gt; G["Glue tables"] --&gt; ATH["Athena"]
+        ATH --&gt; TR["train.py"] --&gt; MOD[("S3 models/")]
+        ATH --&gt; APP["Streamlit&lt;br/&gt;ECS / App Runner"]
+        MOD --&gt; APP
+        ECR["ECR image"] --&gt; APP
+        L -. "logs, failure metric" .-&gt; CW["CloudWatch alarm"]
+    end
+    CTA --&gt; L
+    OM --&gt; L
+    GH -- "OIDC role: terraform apply,&lt;br/&gt;push image, deploy" --&gt; ECR
+    APP --&gt; U
+    </pre></div>
+  </section>
+  <section id="lake">
+    <div class="fig"><span class="num">4</span><h2>Phase 4 · Data lake layout</h2></div>
+    <span class="kind">Folder layout (not UML)</span>
+    <p>Raw API responses are partitioned by ingest date, clean Parquet by year and month, and models are versioned by training date.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    B[("project-env-data bucket")] --&gt; R["raw/"]
+    B --&gt; C["clean/"]
+    B --&gt; M["models/"]
+    B --&gt; AR["athena-results/"]
+    R --&gt; R1["ridership/ingest_date=YYYY-MM-DD/ridership.json"]
+    R --&gt; R2["weather/ingest_date=YYYY-MM-DD/weather.json"]
+    C --&gt; C1["ridership/year=YYYY/month=MM/part-0.parquet"]
+    C --&gt; C2["weather/year=YYYY/month=MM/part-0.parquet"]
+    M --&gt; M1["ridership_model_YYYY-MM-DD.joblib"]
+    </pre></div>
+  </section>
+  <section id="terraform">
+    <div class="fig"><span class="num">5</span><h2>Phase 5 · Terraform module dependencies</h2></div>
+    <span class="kind">Module diagram (not UML)</span>
+    <p>Dev and prod call the same modules with different variables. Only storage is built in Phase 5; the other modules arrive with their phases.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TD
+    BS["bootstrap/&lt;br/&gt;state bucket + locking"] -. "remote state" .-&gt; ENV
+    ENV["envs/dev and envs/prod"] --&gt; STO["storage&lt;br/&gt;Phase 5"]
+    ENV --&gt; ING["ingestion&lt;br/&gt;Phase 6"]
+    ENV --&gt; ANA["analytics&lt;br/&gt;Phase 6"]
+    ENV --&gt; DSH["dashboard&lt;br/&gt;Phase 7"]
+    ENV --&gt; CIM["ci (OIDC role)&lt;br/&gt;Phase 8"]
+    STO -- "bucket_name, bucket_arn" --&gt; ING
+    STO -- "bucket_name" --&gt; ANA
+    STO -- "bucket_arn" --&gt; DSH
+    ANA -- "athena_workgroup" --&gt; DSH
+    STO --- S1["S3: versioning, encryption,&lt;br/&gt;public access block"]
+    ING --- I1["Lambda + IAM role,&lt;br/&gt;EventBridge, CloudWatch alarm"]
+    ANA --- A1["Glue database + tables,&lt;br/&gt;Athena workgroup"]
+    DSH --- D1["ECR repo,&lt;br/&gt;ECS or App Runner"]
+    CIM --- C1["Trust limited to&lt;br/&gt;your repo and branch"]
+    </pre></div>
+  </section>
+  <section id="decisions">
+    <div class="fig"><span class="num">6</span><h2>Open decisions, by when you hit them</h2></div>
+    <span class="kind">Checklist map (not UML)</span>
+    <p>Choices the plan leaves to you, placed in the phase where each one comes up.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    P1["Phase 1"] --&gt; D1["mean of empty list:&lt;br/&gt;return None or raise?"]
+    P4["Phase 4"] --&gt; D2["Same day written twice:&lt;br/&gt;overwrite or keep versions?"]
+    P5["Phase 5"] --&gt; D3["Hand-made bucket:&lt;br/&gt;terraform import or recreate?"]
+    P5 --&gt; D4["Destroy versioned bucket:&lt;br/&gt;force_destroy in dev only?"]
+    P6["Phase 6"] --&gt; D5["pandas in Lambda:&lt;br/&gt;layer or container image?"]
+    P6 --&gt; D6["Ridership lags a few days:&lt;br/&gt;which target date?"]
+    P7["Phase 7"] --&gt; D7["2020 and holidays:&lt;br/&gt;exclude or flag?"]
+    P7 --&gt; D8["Dashboard host:&lt;br/&gt;App Runner or ECS Fargate?"]
+    P7 --&gt; D9["Add optional&lt;br/&gt;FastAPI endpoint?"]
+    P8["Phase 8"] --&gt; D10["Manual approval&lt;br/&gt;for prod deploys?"]
+    </pre></div>
+  </section>
+  <header id="uml" class="part">
+    <span class="eyebrow">Part 2</span>
+    <h1>UML by phase</h1>
+    <p>Each diagram follows the IT 432 notation: swimlanes, initial and final nodes, paired decision and merge nodes, and fork and join bars in activity diagrams; numbered verb-phrase processes, numbered data stores, and a data dictionary in the DFDs; key identifiers, multiplicities, generalization, whole-part, and an association class in the domain model; object lifelines, return messages, frames, and «create» in the sequence diagram. Where Mermaid has no matching symbol, the description says what stands in for it.</p>
+    <nav><a href="#use-case">7. use case diagram</a><a href="#p1-activity">8. activity diagram</a><a href="#p1-dcd">9. design class diagram</a><a href="#p2-context">10. Data flow diagram</a><a href="#p2-level0">11. Data flow diagram</a><a href="#p3-er">12. Entity-relationship diagram</a><a href="#p3-domain">13. domain model class diagram</a><a href="#pipeline-dcd">14. design class diagram</a><a href="#p6-sequence">15. sequence diagram</a><a href="#p7-component">16. Component diagram</a><a href="#p7-dcd">17. design class diagram</a><a href="#p8-activity">18. activity diagram</a></nav>
+  </header>
+  <section id="use-case">
+    <div class="fig"><span class="num">7</span><h2>Whole system · Use case diagram</h2></div>
+    <span class="kind">UML use case diagram</span>
+    <p>Actors outside the automation boundary and the use cases inside it. Ingest Daily Data always includes Clean Source Data; Backfill Historical Data extends it when a past date is passed in; Train Ridership Model always includes Evaluate Model Against Baseline. Mermaid has no actor or ellipse shapes, so actors are boxes marked «actor» and use cases are rounded shapes.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    SCH["«actor»&lt;br/&gt;Scheduler&lt;br/&gt;(time)"]
+    AN["«actor»&lt;br/&gt;Analyst"]
+    VW["«actor»&lt;br/&gt;Dashboard Viewer"]
+    subgraph SYS["CTA Ridership Analysis System"]
+        direction TB
+        UC1(["Ingest Daily Data"])
+        UC2(["Backfill Historical Data"])
+        UC3(["Clean Source Data"])
+        UC4(["Train Ridership Model"])
+        UC5(["Evaluate Model Against Baseline"])
+        UC6(["View Ridership Trend"])
+        UC7(["View Weather Impact"])
+        UC8(["View Model Performance"])
+        UC9(["View Tomorrow's Prediction"])
+    end
+    CDP["«actor»&lt;br/&gt;Chicago Data Portal"]
+    OMA["«actor»&lt;br/&gt;Open-Meteo"]
+    SCH --- UC1
+    AN --- UC2
+    AN --- UC4
+    VW --- UC6
+    VW --- UC7
+    VW --- UC8
+    VW --- UC9
+    UC1 -. "«include»" .-&gt; UC3
+    UC2 -. "«extend»" .-&gt; UC1
+    UC4 -. "«include»" .-&gt; UC5
+    UC1 --- CDP
+    UC1 --- OMA
+    </pre></div>
+  </section>
+  <section id="p1-activity">
+    <div class="fig"><span class="num">8</span><h2>Phase 1 · Activity diagram: clean and summarize the CSV</h2></div>
+    <span class="kind">UML activity diagram</span>
+    <p>Swimlanes for the Analyst and the script. Every decision node has a matching merge node, the three summaries run between a fork and a join, and ridership.csv and the cleaning report are object nodes.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TB
+    subgraph LA["Analyst"]
+        direction TB
+        I((" ")) --&gt; A1("Run main.py")
+        A9("Review report and stats")
+        F(((" ")))
+    end
+    subgraph LS["main.py"]
+        direction TB
+        O1["ridership.csv"]
+        A2("Open ridership file")
+        M1{" "}
+        D1{" "}
+        A3("Read next row")
+        D2{" "}
+        A4("Count invalid row")
+        D3{" "}
+        A5("Count duplicate date")
+        A6("Keep row")
+        M3{" "}
+        M2{" "}
+        FK[" "]
+        S1("Average ridership by weekday")
+        S2("Average ridership by month")
+        S3("Find top and bottom 5 days")
+        JN[" "]
+        A7("Print cleaning report and tables")
+        O2["cleaning report"]
+    end
+    A1 --&gt; O1 --&gt; A2 --&gt; M1 --&gt; D1
+    D1 -- "[more rows]" --&gt; A3 --&gt; D2
+    D2 -- "[invalid]" --&gt; A4 --&gt; M2
+    D2 -- "[valid]" --&gt; D3
+    D3 -- "[duplicate date]" --&gt; A5 --&gt; M3
+    D3 -- "[new date]" --&gt; A6 --&gt; M3
+    M3 --&gt; M2
+    M2 --&gt; M1
+    D1 -- "[no more rows]" --&gt; FK
+    FK --&gt; S1 --&gt; JN
+    FK --&gt; S2 --&gt; JN
+    FK --&gt; S3 --&gt; JN
+    JN --&gt; A7 --&gt; O2 --&gt; A9 --&gt; F
+
+    classDef initial fill:#222,stroke:#222,color:#222
+    classDef final fill:#222,stroke:#888,color:#222
+    classDef bar fill:#222,stroke:#222,color:#222
+    classDef node0 fill:transparent,stroke:#888
+    classDef obj fill:transparent,stroke:#888,stroke-dasharray:0
+    class I initial
+    class F final
+    class FK,JN bar
+    </pre></div>
+  </section>
+  <section id="p1-dcd">
+    <div class="fig"><span class="num">9</span><h2>Phase 1 · Design class diagram: main.py</h2></div>
+    <span class="kind">UML design class diagram</span>
+    <p>main.py drawn as a «module» class: every function with typed parameters and a return type. The dashed arrow shows the standard-library check your mean and median must match.</p>
+    <div class="diagram"><pre class="mermaid">
+classDiagram
+    class phase1_main {
+        &lt;&lt;module&gt;&gt;
+        +load_rows(path: str) list
+        +parse_row(raw: dict) dict
+        +clean_rows(raw_rows: list) tuple
+        +mean(values: list) float
+        +median(values: list) float
+        +group_by(rows: list, key_func: function) dict
+        +stats_by_weekday(rows: list) dict
+        +stats_by_month(rows: list) dict
+        +top_n_days(rows: list, n: int, highest: bool) list
+        +print_table(title: str, mapping: dict) None
+        +main() None
+    }
+    class statistics {
+        &lt;&lt;library&gt;&gt;
+        +mean(data: list) float
+        +median(data: list) float
+    }
+    phase1_main ..&gt; statistics : results must match
+    note for phase1_main "parse_row returns None for an invalid row.\nclean_rows returns (clean rows, report dict)." 
+    </pre></div>
+  </section>
+  <section id="p2-context">
+    <div class="fig"><span class="num">10</span><h2>Phase 2 · DFD context diagram</h2></div>
+    <span class="kind">Data flow diagram (Gane and Sarson)</span>
+    <p>The whole Phase 2 system as process 0, with its sources and sinks. No data stores appear at the context level.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    AN["Analyst"]
+    CDP["Chicago Data Portal"]
+    OMA["Open-Meteo"]
+    HC["Holiday Calendar"]
+    P0("0&lt;br/&gt;CTA Ridership&lt;br/&gt;Analysis System")
+    AN -- "Date Range" --&gt; P0
+    P0 -- "Ridership Query" --&gt; CDP
+    CDP -- "Ridership Records" --&gt; P0
+    P0 -- "Weather Query" --&gt; OMA
+    OMA -- "Weather Observations" --&gt; P0
+    HC -- "Holiday List" --&gt; P0
+    P0 -- "Cleaning Report" --&gt; AN
+    P0 -- "EDA Charts and Findings" --&gt; AN
+    classDef ext stroke-width:3px
+    class AN,CDP,OMA,HC ext
+    </pre></div>
+  </section>
+  <section id="p2-level0">
+    <div class="fig"><span class="num">11</span><h2>Phase 2 · DFD level 0 diagram</h2></div>
+    <span class="kind">Data flow diagram (Gane and Sarson)</span>
+    <p>Every context flow appears here. Processes are numbered verb phrases, data stores are numbered noun phrases (D1–D3), and data only enters or leaves a store through a process. Mermaid has no open-ended rectangle, so stores use the double-sided box.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    AN["Analyst"]
+    CDP["Chicago Data Portal"]
+    OMA["Open-Meteo"]
+    HC["Holiday Calendar"]
+    P1("1&lt;br/&gt;Fetch Ridership")
+    P2("2&lt;br/&gt;Fetch Weather")
+    P3("3&lt;br/&gt;Clean Ridership")
+    P4("4&lt;br/&gt;Clean Weather")
+    P5("5&lt;br/&gt;Merge Daily Data")
+    P6("6&lt;br/&gt;Produce EDA Charts")
+    D1[["D1 | Raw Ridership File"]]
+    D2[["D2 | Raw Weather File"]]
+    D3[["D3 | Merged Daily Dataset"]]
+    AN -- "Date Range" --&gt; P1
+    AN -- "Date Range" --&gt; P2
+    P1 -- "Ridership Query" --&gt; CDP
+    CDP -- "Ridership Records" --&gt; P1
+    P1 -- "Raw Ridership" --&gt; D1
+    P2 -- "Weather Query" --&gt; OMA
+    OMA -- "Weather Observations" --&gt; P2
+    P2 -- "Raw Weather" --&gt; D2
+    D1 -- "Raw Ridership" --&gt; P3
+    D2 -- "Raw Weather" --&gt; P4
+    P3 -- "Clean Ridership" --&gt; P5
+    P4 -- "Clean Weather" --&gt; P5
+    HC -- "Holiday List" --&gt; P5
+    P3 -- "Cleaning Report" --&gt; AN
+    P5 -- "Merged Daily Record" --&gt; D3
+    D3 -- "Merged Daily Record" --&gt; P6
+    P6 -- "EDA Charts and Findings" --&gt; AN
+    classDef ext stroke-width:3px
+    class AN,CDP,OMA,HC ext
+    </pre></div>
+    <div class="dict"><h3 class="kind">Data dictionary</h3><dl>
+      <dt>Date Range</dt><dd>= Start_Date + End_Date</dd>
+      <dt>Ridership Query</dt><dd>= Dataset_ID + Start_Date + End_Date</dd>
+      <dt>Ridership Records</dt><dd>= 1{Service_Date + Day_Type + Bus_Rides + Rail_Rides + Total_Rides}N</dd>
+      <dt>Raw Ridership</dt><dd>= Ingest_Date + 1{Service_Date + Day_Type + Bus_Rides + Rail_Rides + Total_Rides}N</dd>
+      <dt>Weather Query</dt><dd>= Latitude + Longitude + Start_Date + End_Date + Daily_Variables</dd>
+      <dt>Weather Observations</dt><dd>= 1{Weather_Date + Temp_Max_C + Temp_Min_C + Precipitation_mm + Snowfall_cm}N</dd>
+      <dt>Raw Weather</dt><dd>= Ingest_Date + 1{Weather_Date + Temp_Max_C + Temp_Min_C + Precipitation_mm + Snowfall_cm}N</dd>
+      <dt>Clean Ridership</dt><dd>= 1{Service_Date + Day_Type + Bus_Rides + Rail_Rides + Total_Rides}N</dd>
+      <dt>Clean Weather</dt><dd>= 1{Weather_Date + Temp_Max_C + Temp_Min_C + Precipitation_mm + Snowfall_cm}N</dd>
+      <dt>Holiday List</dt><dd>= 1{Holiday_Date + Holiday_Name}N</dd>
+      <dt>Cleaning Report</dt><dd>= Rows_Loaded + Rows_Invalid + Rows_Duplicate + Rows_Kept</dd>
+      <dt>Merged Daily Record</dt><dd>= Service_Date + Total_Rides + Bus_Rides + Rail_Rides + Temp_Max_C + Temp_Min_C + Precipitation_mm + Snowfall_cm + Weekday + Month + Is_Weekend + Is_Holiday</dd>
+      <dt>EDA Charts and Findings</dt><dd>= 1{Chart_Title + Chart_Image + Finding_Sentence}N</dd>
+    </dl></div>
+  </section>
+  <section id="p3-er">
+    <div class="fig"><span class="num">12</span><h2>Phase 3 · ER diagram</h2></div>
+    <span class="kind">Entity-relationship diagram</span>
+    <p>The three SQL tables, keyed by date so loads can be upserts. Every service day has at most one weather row and at most one holiday.</p>
+    <div class="diagram"><pre class="mermaid">
+erDiagram
+    DAILY_RIDERSHIP {
+        date service_date PK
+        string day_type
+        int bus_rides
+        int rail_rides
+        int total_rides
+    }
+    DAILY_WEATHER {
+        date weather_date PK
+        float temp_max_c
+        float temp_min_c
+        float precipitation_mm
+        float snowfall_cm
+    }
+    HOLIDAYS {
+        date holiday_date PK
+        string holiday_name
+    }
+    DAILY_RIDERSHIP ||--o| DAILY_WEATHER : "same date"
+    DAILY_RIDERSHIP ||--o| HOLIDAYS : "same date"
+    </pre></div>
+  </section>
+  <section id="p3-domain">
+    <div class="fig"><span class="num">13</span><h2>Phase 3 · Domain model class diagram</h2></div>
+    <span class="kind">UML domain model class diagram</span>
+    <p>The problem-domain classes with {key} identifiers, attributes, named associations, and multiplicities. RidershipCount is abstract with a {disjoint, complete} generalization, IngestRun is a whole made of RawFiles, and Prediction is the association class on Model predicts ServiceDay. Mermaid cannot draw the dashed line to an association, so Prediction is linked to both ends with a note.</p>
+    <div class="diagram"><pre class="mermaid">
+classDiagram
+    direction LR
+    class ServiceDay {
+        serviceDate #123;key#125;
+        dayType
+        isWeekend
+    }
+    class RidershipCount {
+        &lt;&lt;abstract&gt;&gt;
+        countID #123;key#125;
+        rides
+        ingestDate
+    }
+    class BusRidership
+    class RailRidership
+    class WeatherObservation {
+        observationID #123;key#125;
+        tempMaxC
+        tempMinC
+        precipitationMm
+        snowfallCm
+    }
+    class Location {
+        locationID #123;key#125;
+        name
+        latitude
+        longitude
+    }
+    class Holiday {
+        holidayDate #123;key#125;
+        holidayName
+    }
+    class IngestRun {
+        runID #123;key#125;
+        targetDate
+        startTime
+        status
+        rowsWritten
+    }
+    class RawFile {
+        fileKey #123;key#125;
+        source
+        format
+        uploadTime
+    }
+    class Model {
+        modelID #123;key#125;
+        modelType
+        trainedDate
+        cutoffDate
+        mae
+    }
+    class Prediction {
+        predictedRides
+        predictionDate
+        absoluteError
+    }
+    RidershipCount &lt;|-- BusRidership : disjoint, complete
+    RidershipCount &lt;|-- RailRidership
+    ServiceDay "1" -- "1..*" RidershipCount : records ▶
+    ServiceDay "1" -- "0..1" WeatherObservation : has ▶
+    Location "1" -- "0..*" WeatherObservation : reports ▶
+    Holiday "0..1" -- "0..*" ServiceDay : falls on ▶
+    IngestRun "1" *-- "1..*" RawFile : contains ▶
+    IngestRun "0..*" -- "1" ServiceDay : loads ▶
+    Model "0..*" -- "0..*" ServiceDay : predicts ▶
+    Model "1" -- "0..*" Prediction
+    Prediction "0..*" -- "1" ServiceDay
+    note for Prediction "Association class of Model predicts ServiceDay"
+    note for RawFile "A raw file exists only within its ingest run" 
+    </pre></div>
+  </section>
+  <section id="pipeline-dcd">
+    <div class="fig"><span class="num">14</span><h2>Phases 2–6 · Design class diagram: pipeline modules</h2></div>
+    <span class="kind">UML design class diagram</span>
+    <p>The data modules and the Lambda handler with full method signatures. Arrows are navigation visibility: the handler calls ingest, cleaning, and s3_io instead of copying their code.</p>
+    <div class="diagram"><pre class="mermaid">
+classDiagram
+    class ingest_handler {
+        &lt;&lt;control&gt;&gt;
+        +handler(event: dict, context: object) dict
+        +get_config() dict
+        +ingest_source(name: str, fetch_func: function, date: date) int
+    }
+    class ingest {
+        &lt;&lt;boundary&gt;&gt;
+        +fetch_ridership(start_date: date, end_date: date) DataFrame
+        +fetch_weather(start_date: date, end_date: date, lat: float, lon: float) DataFrame
+    }
+    class cleaning {
+        &lt;&lt;module&gt;&gt;
+        +clean_ridership(df: DataFrame) DataFrame
+        +clean_weather(df: DataFrame) DataFrame
+        +cleaning_report(before: DataFrame, after: DataFrame) dict
+    }
+    class features {
+        &lt;&lt;module&gt;&gt;
+        +merge_ridership_weather(rides: DataFrame, weather: DataFrame) DataFrame
+        +add_calendar_features(df: DataFrame) DataFrame
+    }
+    class s3_io {
+        &lt;&lt;data access&gt;&gt;
+        +upload_raw(bucket: str, source: str, date: date, data: dict) str
+        +write_parquet(bucket: str, prefix: str, df: DataFrame) str
+        +read_parquet(bucket: str, prefix: str) DataFrame
+        +list_keys(bucket: str, prefix: str) list
+    }
+    class db {
+        &lt;&lt;data access&gt;&gt;
+        +get_connection(db_url: str) Connection
+        +create_tables(conn: Connection) None
+        +upsert_ridership(conn: Connection, df: DataFrame) int
+        +upsert_weather(conn: Connection, df: DataFrame) int
+        +run_query(conn: Connection, sql_path: str) DataFrame
+    }
+    ingest_handler --&gt; ingest
+    ingest_handler --&gt; cleaning
+    ingest_handler --&gt; s3_io
+    features --&gt; cleaning
+    db --&gt; cleaning
+    </pre></div>
+  </section>
+  <section id="p6-sequence">
+    <div class="fig"><span class="num">15</span><h2>Phase 6 · Multilayer sequence diagram: daily ingest</h2></div>
+    <span class="kind">UML sequence diagram</span>
+    <p>Object lifelines (name:Class), messages written as returnValue := message(parameters), a dashed return after each synchronous call, alt frames whose guard conditions Mermaid shows in brackets, «create» for each new raw file, and assumptions in a note.</p>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    actor SCH as :Scheduler
+    participant H as :IngestHandler
+    participant PS as :ParameterStore
+    participant CDP as :ChicagoDataPortal
+    participant OM as :OpenMeteo
+    participant S3 as :S3DataAccess
+    participant CW as :CloudWatch
+    Note over H,CDP: Assumptions: targetDate defaults to yesterday. Athena reads clean/ later through Glue tables, outside this run.
+    SCH-&gt;&gt;H: summary := handler(event, context)
+    H-&gt;&gt;PS: config := get_config()
+    PS--&gt;&gt;H: config
+    H-&gt;&gt;CDP: rides := fetch_ridership(targetDate, targetDate)
+    CDP--&gt;&gt;H: rides
+    alt rides returned
+        create participant RR as ridershipFile:RawFile
+        H-&gt;&gt;RR: «create» RawFile(ridership, targetDate, rides)
+        H-&gt;&gt;S3: rideKey := upload_raw(bucket, ridership, targetDate, rides)
+        S3--&gt;&gt;H: rideKey
+    else error or no data yet
+        H-)CW: putMetric(IngestFailure, 1)
+    end
+    H-&gt;&gt;OM: weather := fetch_weather(targetDate, targetDate, lat, lon)
+    OM--&gt;&gt;H: weather
+    alt weather returned
+        create participant RW as weatherFile:RawFile
+        H-&gt;&gt;RW: «create» RawFile(weather, targetDate, weather)
+        H-&gt;&gt;S3: weatherKey := upload_raw(bucket, weather, targetDate, weather)
+        S3--&gt;&gt;H: weatherKey
+    else error
+        H-)CW: putMetric(IngestFailure, 1)
+    end
+    H-&gt;&gt;S3: cleanKey := write_parquet(bucket, clean/, cleanDf)
+    S3--&gt;&gt;H: cleanKey
+    H-)CW: logSummary(targetDate, rowsWritten)
+    H--&gt;&gt;SCH: summary
+    </pre></div>
+  </section>
+  <section id="p7-component">
+    <div class="fig"><span class="num">16</span><h2>Phase 7 · Component diagram</h2></div>
+    <span class="kind">Component diagram</span>
+    <p>How the training job, the model file, the container, and the dashboard connect. The course rubrics don&#x27;t cover component diagrams, so this uses «component» and «artifact» labels to stand in for UML component symbols.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+    ATH["«component»&lt;br/&gt;Athena query layer"]
+    TR["«component»&lt;br/&gt;train.py job"]
+    EV["«artifact»&lt;br/&gt;evaluation report"]
+    MOD["«artifact»&lt;br/&gt;model .joblib in S3"]
+    PR["«component»&lt;br/&gt;predict.py"]
+    APP["«component»&lt;br/&gt;Streamlit app.py"]
+    IMG["«artifact»&lt;br/&gt;Docker image in ECR"]
+    RUN["«node»&lt;br/&gt;ECS Fargate or App Runner"]
+    U["«actor»&lt;br/&gt;Dashboard Viewer"]
+    ATH -- "clean data" --&gt; TR
+    TR --&gt; EV
+    TR -- "saves" --&gt; MOD
+    MOD -- "loads newest" --&gt; PR
+    ATH -- "trend and weather data" --&gt; APP
+    PR -- "prediction" --&gt; APP
+    APP -. "packaged as" .-&gt; IMG
+    IMG -. "deployed on" .-&gt; RUN
+    RUN --&gt; U
+    </pre></div>
+  </section>
+  <section id="p7-dcd">
+    <div class="fig"><span class="num">17</span><h2>Phase 7 · Design class diagram: model and dashboard</h2></div>
+    <span class="kind">UML design class diagram</span>
+    <p>Training, prediction, and dashboard code with full signatures. Every model is compared with the same-as-7-days-ago baseline before it is saved.</p>
+    <div class="diagram"><pre class="mermaid">
+classDiagram
+    class dashboard_app {
+        &lt;&lt;boundary&gt;&gt;
+        +show_ridership_trend(start: date, end: date) None
+        +show_weather_impact() None
+        +show_model_performance() None
+        +show_tomorrow_prediction() None
+    }
+    class predict {
+        &lt;&lt;control&gt;&gt;
+        +load_latest_model(bucket: str) Model
+        +predict_for_date(model: Model, date: date, weather: dict) int
+    }
+    class train {
+        &lt;&lt;control&gt;&gt;
+        +baseline_predict(df: DataFrame) Series
+        +train_model(X_train: DataFrame, y_train: Series, kind: str) Model
+        +evaluate(y_true: Series, y_pred: Series) dict
+        +feature_importance(model: Model, names: list) list
+        +save_model(model: Model, bucket: str, date: date) str
+    }
+    class features {
+        &lt;&lt;module&gt;&gt;
+        +build_features(df: DataFrame) tuple
+        +time_split(df: DataFrame, cutoff_date: date) tuple
+    }
+    class s3_io {
+        &lt;&lt;data access&gt;&gt;
+        +read_parquet(bucket: str, prefix: str) DataFrame
+        +list_keys(bucket: str, prefix: str) list
+    }
+    dashboard_app --&gt; predict
+    dashboard_app --&gt; s3_io
+    predict --&gt; s3_io
+    train --&gt; features
+    train --&gt; s3_io
+    note for dashboard_app "Shows a clear message when no model exists in S3 yet" 
+    </pre></div>
+  </section>
+  <section id="p8-activity">
+    <div class="fig"><span class="num">18</span><h2>Phase 8 · Activity diagram: CI/CD</h2></div>
+    <span class="kind">UML activity diagram</span>
+    <p>Swimlanes for the Developer, GitHub Actions, and AWS. A pull request runs the checks between a fork and a join; failed checks or a rejected review loop back through merge nodes; only a merge to main reaches AWS.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart TB
+    subgraph DEV["Developer"]
+        direction TB
+        I((" ")) --&gt; A1("Open pull request")
+        M2{" "}
+        A2("Fix code and push commit")
+        A6("Review plan summary")
+        D2{" "}
+        A7("Merge to main")
+        A12("Read failure notice")
+    end
+    subgraph GA["GitHub Actions"]
+        direction TB
+        M1{" "}
+        FK1[" "]
+        B1("Run pytest")
+        B2("Check Terraform format and validate")
+        JN1[" "]
+        B3("Run terraform plan for dev")
+        B4("Post plan summary")
+        D1{" "}
+        B5("Assume AWS role through OIDC")
+        B6("Run terraform apply for dev")
+        B7("Build and push Docker image")
+        FK2[" "]
+        B8("Deploy Lambda")
+        B9("Deploy dashboard")
+        JN2[" "]
+        B10("Run smoke tests")
+        D3{" "}
+        B11("Notify developer")
+        M3{" "}
+        F(((" ")))
+    end
+    subgraph AWS["AWS (dev)"]
+        direction TB
+        C1("Update infrastructure")
+        O1["Docker image in ECR"]
+    end
+    A1 --&gt; M1 --&gt; FK1
+    FK1 --&gt; B1 --&gt; JN1
+    FK1 --&gt; B2 --&gt; JN1
+    JN1 --&gt; B3 --&gt; B4 --&gt; D1
+    D1 -- "[checks failed]" --&gt; M2
+    D1 -- "[checks passed]" --&gt; A6 --&gt; D2
+    D2 -- "[changes requested]" --&gt; M2
+    M2 --&gt; A2 --&gt; M1
+    D2 -- "[approved]" --&gt; A7 --&gt; B5 --&gt; B6 --&gt; C1 --&gt; B7 --&gt; O1 --&gt; FK2
+    FK2 --&gt; B8 --&gt; JN2
+    FK2 --&gt; B9 --&gt; JN2
+    JN2 --&gt; B10 --&gt; D3
+    D3 -- "[tests passed]" --&gt; M3
+    D3 -- "[tests failed]" --&gt; B11 --&gt; A12 --&gt; M3
+    M3 --&gt; F
+
+    classDef initial fill:#222,stroke:#222,color:#222
+    classDef final fill:#222,stroke:#888,color:#222
+    classDef bar fill:#222,stroke:#222,color:#222
+    classDef node0 fill:transparent,stroke:#888
+    classDef obj fill:transparent,stroke:#888,stroke-dasharray:0
+    class I initial
+    class F final
+    class FK1,JN1,FK2,JN2 bar
+    </pre></div>
+  </section>
+
+  <footer>Built from <code>C:\CTA-Ridership-Project\PROJECT_PLAN.md</code> as of November 17, 2026, following the rubrics in <code>C:\IT 432</code>. Every diagram was checked to render in Mermaid 10 and 11.</footer>
+</div>
+</body>
+</html>
